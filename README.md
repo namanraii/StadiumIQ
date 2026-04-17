@@ -55,13 +55,30 @@ graph LR
 
 ## ☁️ Google Services Used
 
-| Service | Role | Why Chosen |
+| Service | Role | Implementation Detail |
 |---|---|---|
-| **Gemini 2.5 Flash** | NLU + response generation | Best latency for real-time conversational use |
-| **Firebase Realtime DB** | Live gameState, crowd, queue data | `onValue()` eliminates polling entirely |
-| **Maps JavaScript API** | Venue map + crowd density overlay | Visual spatial context for attendees |
-| **Routes API** | Crowd-aware walking directions | Separate from Maps JS for optimized routing |
-| **Cloud Run** | Containerized deployment | Scalable static hosting via Nginx |
+| **Gemini 2.5 Flash** | NLU + real-time response generation + proactive alerting | `generateContent` via REST API with system instructions, context injection, and 30s response caching |
+| **Firebase Realtime DB** | Live gameState, crowd density, queue, and gate data | `onValue()` listeners — zero-polling, instant UI updates on every Firebase write |
+| **Maps JavaScript API** | Interactive satellite venue map with custom facility markers | Custom SVG marker overlays for gates (A-D), food stalls, restrooms, and exits with live crowd-density fill colours |
+| **Routes API** | Crowd-aware pedestrian walking directions | POST to `computeRoutes` endpoint with `WALK` travel mode; summary injected into Gemini context for natural language routing |
+| **Cloud Run** | Containerized serverless deployment | Nginx Docker container auto-scaled to handle event traffic spikes; built via Cloud Build from source |
+| **Cloud Build** | CI/CD build pipeline | Automated container image build triggered by `gcloud run deploy --source .`; image stored in Artifact Registry |
+
+### Production Architecture with Extended Google Services
+In a production deployment at scale, StadiumIQ would integrate additional Google services:
+
+```
+IoT Sensors → Pub/Sub → Cloud Functions → Firebase Realtime DB → StadiumIQ
+                                     ↘ BigQuery (historical analytics)
+Gemini API ← Firebase ← Cloud Run   ← Google Maps Platform
+                                     ↘ Vertex AI (crowd prediction model)
+```
+
+- **Cloud Pub/Sub**: Ingest real-time IoT sensor data streams from 10,000+ seat sensors
+- **Cloud Functions**: Serverless event processors for sensor data → Firebase writes
+- **BigQuery**: Store and analyse historical crowd patterns across multiple events
+- **Vertex AI**: Train and serve predictive crowd density models for pre-emptive routing
+
 
 ---
 
