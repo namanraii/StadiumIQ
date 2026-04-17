@@ -60,5 +60,12 @@
 </main>
 
 <script type="module" src="js/app.js"></script>
+<script>
+  // Global callback for Google Maps - defined here to prevent race conditions
+  window.onMapsLoaded = async function() {
+    const { initMap } = await import("./js/maps.js");
+    initMap();
+  };
+</script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAY4k4eFkpE_QupSCUnTnJIkP5C2Ly77HY&libraries=places,marker&callback=onMapsLoaded&loading=async" async defer></script>
 </body></html>

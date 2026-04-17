@@ -73,11 +73,6 @@ window.dismissAlert = function() {
   document.getElementById("alert-banner").hidden = true;
 };
 
-window.onMapsLoaded = async function() {
-  const { initMap } = await import("./maps.js");
-  initMap();
-};
-
 window.handleSubmit = handleSubmit;
 
 function appendMessage(text, role, isProactive = false) {
