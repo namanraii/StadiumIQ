@@ -123,5 +123,5 @@ Game: Q${ctx.gameState?.quarter}, ${ctx.gameState?.minutesLeft} min left, Phase:
 Gates: ${JSON.stringify(ctx.gates)}
 Queues: ${JSON.stringify(ctx.queues)}
 Crowd: ${JSON.stringify(ctx.crowd)}
-Schedule: ${JSON.stringify(window.STADIUM?.schedule)}`.trim();
+Schedule: ${JSON.stringify(window.STADIUM?.schedule)}${ctx.nlEntities ? `\nNL Analysis: ${ctx.nlEntities}` : ""}`.trim();
 }

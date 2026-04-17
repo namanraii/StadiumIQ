@@ -17,6 +17,7 @@ import { classifyIntent }                          from "./intent.js";
 import { computeRoute }                            from "./routes.js";
 import { startProactiveLoop }                      from "./proactive.js";
 import { updateGateOverlay, focusLocation }        from "./maps.js";
+import { analyseQuery, formatAnnotationForContext } from "./nlp.js";
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -96,6 +97,13 @@ export async function handleSubmit(e) {
     const intent = classifyIntent(text);
     const ctx    = getLiveContext();
 
+    // Stage 1: Cloud Natural Language API — entity extraction + sentiment
+    // Enriches Gemini context with detected locations, events, and query intent signals
+    const nlAnnotation = await analyseQuery(text);
+    const nlContext    = formatAnnotationForContext(nlAnnotation);
+    if (nlContext) ctx.nlEntities = nlContext;
+
+    // Stage 2: Route computation for navigation/exit intents
     if (intent === "navigation" || intent === "exit") {
       const destSection = _extractSection(text, ctx);
       if (destSection) {

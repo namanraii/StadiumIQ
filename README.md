@@ -64,6 +64,7 @@ graph LR
 | **Cloud Run** | Containerized serverless deployment | Nginx Docker container auto-scaled to handle event traffic spikes; built via Cloud Build from source |
 | **Cloud Build** | CI/CD build pipeline | Automated container image build triggered by `gcloud run deploy --source .`; image stored in Artifact Registry |
 | **Firebase Performance Monitoring** | Real-User Monitoring (RUM) + custom traces | `getPerformance()` SDK in `js/perf.js`; custom traces instrument `gemini_response`, `route_compute`, `proactive_eval`, and `firebase_init` latency |
+| **Cloud Natural Language API** | Entity extraction + sentiment analysis on user queries | `js/nlp.js` calls `analyzeEntities` + `analyzeSentiment` endpoints; detected locations/events are injected into Gemini context for richer, more precise answers |
 
 ### Production Architecture with Extended Google Services
 In a production deployment at scale, StadiumIQ would integrate additional Google services:
