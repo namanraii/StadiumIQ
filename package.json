@@ -1,6 +1,20 @@
 {
-  "name": "smartstadium-ai",
+  "name": "stadiumiq",
+  "version": "1.0.0",
+  "description": "StadiumIQ — Proactive AI concierge for large-scale sporting venues. Powered by Gemini, Firebase, and Google Maps.",
+  "author": "Naman Rai",
+  "license": "MIT",
   "type": "module",
-  "scripts": { "test": "node --experimental-vm-modules node_modules/.bin/jest" },
-  "devDependencies": { "jest": "^29.7.0" }
+  "keywords": ["gemini", "firebase", "google-maps", "ai", "stadium", "concierge", "proactive"],
+  "scripts": {
+    "test":     "node --experimental-vm-modules node_modules/.bin/jest",
+    "coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "serve":    "python3 -m http.server 3000"
+  },
+  "jest": {
+    "transform": {}
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
 }
