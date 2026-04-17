@@ -9,6 +9,8 @@
  *  - Gemini 2.5 Flash (generativelanguage.googleapis.com) — NLU + generation
  */
 
+import { startTrace, recordMetric } from "./perf.js";
+
 /** @constant {string} Base endpoint for Gemini 2.5 Flash generateContent */
 const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/" +
@@ -63,6 +65,8 @@ export async function askGemini(userMessage, ctx) {
     }
   };
 
+  const stopTrace = startTrace("gemini_response");
+
   const res = await fetch(
     `${GEMINI_ENDPOINT}?key=${window.ENV.GEMINI_API_KEY}`,
     {
@@ -73,12 +77,15 @@ export async function askGemini(userMessage, ctx) {
   );
 
   if (!res.ok) {
+    stopTrace();
     const err = await res.text();
     throw new Error(`Gemini API error ${res.status}: ${err}`);
   }
 
   const data = await res.json();
   const reply = data.candidates[0].content.parts[0].text.trim();
+  stopTrace();
+  recordMetric("gemini_response", "response_length", reply.length);
 
   // Cache for 30 s to prevent duplicate calls on repeated chip taps
   _responseCache.set(cacheKey, reply);
