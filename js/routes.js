@@ -45,9 +45,9 @@ export async function computeRoute(origin, destination) {
     routeModifiers: { avoidHighways: true },
   };
 
-  let res;
+  let data;
   try {
-    res = await fetch(ROUTES_URL, {
+    const res = await fetch(ROUTES_URL, {
       method: "POST",
       signal: controller.signal,
       headers: {
@@ -58,13 +58,12 @@ export async function computeRoute(origin, destination) {
       },
       body: JSON.stringify(body),
     });
+    if (!res.ok) throw new Error(`Routes API error ${res.status}`);
+    data = await res.json();
   } finally {
     clearTimeout(timer);
   }
 
-  if (!res.ok) throw new Error(`Routes API error ${res.status}`);
-
-  const data = await res.json();
   const route = data.routes?.[0];
   if (!route) throw new Error("Routes API returned no valid route");
 
