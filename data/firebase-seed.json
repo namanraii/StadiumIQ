@@ -1,0 +1,58 @@
+{
+    "gameState": {
+        "phase": "live",
+        "quarter": 3,
+        "minutesLeft": 8,
+        "homeScore": 2,
+        "awayScore": 1
+    },
+    "queues": {
+        "c1": {
+            "waitMinutes": 7,
+            "isOpen": true
+        },
+        "c2": {
+            "waitMinutes": 2,
+            "isOpen": true
+        },
+        "c3": {
+            "waitMinutes": 12,
+            "isOpen": true
+        },
+        "r1": {
+            "waitMinutes": 3,
+            "isOpen": true
+        },
+        "r2": {
+            "waitMinutes": 0,
+            "isOpen": true
+        }
+    },
+    "gates": {
+        "A": {
+            "capacityPct": 82,
+            "isOpen": true
+        },
+        "B": {
+            "capacityPct": 45,
+            "isOpen": true
+        },
+        "C": {
+            "capacityPct": 31,
+            "isOpen": true
+        },
+        "D": {
+            "capacityPct": 18,
+            "isOpen": true
+        }
+    },
+    "crowd": {
+        "main-exit": {
+            "density": 0.71
+        },
+        "north-bridge": {
+            "density": 0.22
+        }
+    },
+    "alerts": {}
+}

@@ -1,0 +1,34 @@
+{
+  "venue": "MetroArena",
+  "capacity": 60000,
+  "gates": [
+    { "id": "A", "name": "Main Gate", "lat": 12.9716, "lng": 77.5946 },
+    { "id": "B", "name": "East Gate", "lat": 12.9720, "lng": 77.5955 },
+    { "id": "C", "name": "West Gate", "lat": 12.9712, "lng": 77.5938 },
+    { "id": "D", "name": "North Gate","lat": 12.9724, "lng": 77.5946 }
+  ],
+  "sections": [
+    { "id": "101", "level": 1, "nearestGate": "A", "lat": 12.9718, "lng": 77.5948 },
+    { "id": "201", "level": 2, "nearestGate": "B", "lat": 12.9719, "lng": 77.5952 }
+  ],
+  "concessions": [
+    { "id": "c1", "name": "Stadium Grill", "section": "101", "lat": 12.9717, "lng": 77.5947 },
+    { "id": "c2", "name": "Snack Bar",     "section": "201", "lat": 12.9721, "lng": 77.5953 },
+    { "id": "c3", "name": "Gate C Kiosk", "section": "C",   "lat": 12.9713, "lng": 77.5939 }
+  ],
+  "restrooms": [
+    { "id": "r1", "section": "101", "lat": 12.9716, "lng": 77.5945 },
+    { "id": "r2", "section": "201", "lat": 12.9720, "lng": 77.5951 }
+  ],
+  "exits": [
+    { "id": "main",       "name": "Main Exit",    "lat": 12.9714, "lng": 77.5944 },
+    { "id": "northBridge","name": "North Bridge", "lat": 12.9726, "lng": 77.5946 }
+  ],
+  "schedule": [
+    { "time": "17:30", "event": "Gates open" },
+    { "time": "19:00", "event": "Kick-off" },
+    { "time": "19:45", "event": "Halftime" },
+    { "time": "20:45", "event": "Final whistle" },
+    { "time": "21:00", "event": "Post-game show" }
+  ]
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StadiumIQ — MetroArena Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="config.js"></script>
+</head>
+<body>
+
+<div id="alert-banner" role="alert" aria-live="assertive" hidden>
+  <span id="alert-icon" aria-hidden="true">></span>
+  <span id="alert-text"></span>
+  <button id="alert-close" onclick="dismissAlert()"
+    aria-label="Dismiss alert">x</button>
+</div>
+
+<main class="shell" role="main">
+
+  <section class="map-panel" aria-label="Venue map">
+    <div id="map" aria-label="MetroArena interactive map"></div>
+    <div id="crowd-legend" aria-label="Gate capacity legend">
+      <span class="dot green"></span> Low
+      <span class="dot amber"></span> Medium
+      <span class="dot red"></span> High
+    </div>
+  </section>
+
+  <section class="chat-panel" aria-label="Chat with StadiumIQ">
+    <header class="chat-header">
+      <div class="chat-logo" aria-hidden="true">SQ</div>
+      <div>
+        <h1>StadiumIQ</h1>
+        <p id="game-status" aria-live="polite">Connecting...</p>
+      </div>
+    </header>
+
+    <div id="messages" role="log"
+      aria-live="polite" aria-label="Conversation history"></div>
+
+    <div class="chips" role="group" aria-label="Quick questions">
+      <button class="chip" onclick="quickAsk('Nearest food stall?')">Food nearby</button>
+      <button class="chip" onclick="quickAsk('Current queue times?')">Queue times</button>
+      <button class="chip" onclick="quickAsk('Best gate to enter?')">Gate advice</button>
+      <button class="chip" onclick="quickAsk('Nearest restroom?')">Restrooms</button>
+      <button class="chip" onclick="quickAsk('Best way to exit now?')">Exit route</button>
+    </div>
+
+    <form id="chat-form" onsubmit="handleSubmit(event)">
+      <input type="text" id="user-input"
+        placeholder="Ask anything about the venue..."
+        aria-label="Message StadiumIQ"
+        autocomplete="off" maxlength="300">
+      <button type="submit" aria-label="Send message">Send</button>
+    </form>
+  </section>
+
+</main>
+
+<script type="module" src="js/app.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAY4k4eFkpE_QupSCUnTnJIkP5C2Ly77HY&libraries=places,marker&callback=onMapsLoaded&loading=async" async defer></script>
+</body></html>
