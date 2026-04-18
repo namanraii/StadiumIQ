@@ -18,8 +18,12 @@ import { computeRoute }                            from "./routes.js";
 import { startProactiveLoop }                      from "./proactive.js";
 import { updateGateOverlay, focusLocation }        from "./maps.js";
 import { analyseQuery, formatAnnotationForContext } from "./nlp.js";
-import { trackChatMessage, trackProactiveAlert }    from "./analytics.js";
-import { streamInteraction, streamVenueSnapshot }   from "./bigquery.js";
+import { trackChatMessage }                        from "./analytics.js";
+import { streamInteraction, streamVenueSnapshot }  from "./bigquery.js";
+import { appendMessage, updateBotMessage,
+         showAlertBanner, hideAlertBanner,
+         updateStatusBar, consumeInput }           from "./ui.js";
+import { sanitise }                                from "./utils.js";
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -56,24 +60,17 @@ window.addEventListener("DOMContentLoaded", () => {
 window.addEventListener("gamestate-update", e => {
   const gs  = e.detail;
   const ctx = getLiveContext();
-  const el  = document.getElementById("game-status");
-  if (el) el.textContent = `Q${gs.quarter} · ${gs.minutesLeft} min left · Live`;
+  updateStatusBar(gs.quarter, gs.minutesLeft);
   updateGateOverlay(ctx.gates);
-  // BigQuery: stream venue snapshot on every live game-state update
   streamVenueSnapshot(ctx.gates, ctx.crowd, gs);
 });
 
 /**
- * Fires when Firebase pushes a new venue-wide alert (e.g. emergency, delay).
- * Displays the alert banner and auto-dismisses after 10 seconds.
- *
+ * Fires when Firebase pushes a new venue-wide alert.
  * @listens {CustomEvent} stadium-alert
  */
 window.addEventListener("stadium-alert", e => {
-  const banner = document.getElementById("alert-banner");
-  document.getElementById("alert-text").textContent = e.detail.message;
-  banner.hidden = false;
-  setTimeout(() => { banner.hidden = true; }, 10_000);
+  showAlertBanner(e.detail.message);
 });
 
 // ---------------------------------------------------------------------------
@@ -89,15 +86,13 @@ window.addEventListener("stadium-alert", e => {
  */
 export async function handleSubmit(e) {
   e.preventDefault();
-  const input = document.getElementById("user-input");
-  const raw   = input.value.trim();
+  const raw = consumeInput(); // ui.js — reads + clears input atomically
   if (!raw) return;
-  input.value = "";
 
-  const text      = sanitise(raw);
-  const startTime = performance.now(); // Start timer for BigQuery response_ms metric
+  const text      = sanitise(raw); // utils.js — centralised sanitisation
+  const startTime = performance.now();
   appendMessage(text, "user");
-  const thinking = appendMessage("…", "bot");
+  const thinking  = appendMessage("…", "bot");
 
   try {
     const intent = classifyIntent(text);
@@ -126,8 +121,7 @@ export async function handleSubmit(e) {
     }
 
     const reply = await askGemini(text, ctx);
-    thinking.textContent = reply;
-    thinking.setAttribute("aria-label", `StadiumIQ says: ${reply}`);
+    updateBotMessage(thinking, reply); // ui.js — updates text + aria-label atomically
 
     // BigQuery Streaming Insert — log full interaction for post-event analytics
     // Fields: query, intent, response, latency, game state at time of query
@@ -156,18 +150,13 @@ export async function handleSubmit(e) {
  * @returns {void}
  */
 window.quickAsk = function(q) {
-  trackChatMessage(classifyIntent(q), true); // GA4: track quick action chip taps
+  trackChatMessage(classifyIntent(q), true);
   document.getElementById("user-input").value = q;
   handleSubmit({ preventDefault: () => {} });
 };
 
-/**
- * Dismiss the alert banner when the user clicks the close button.
- * @returns {void}
- */
-window.dismissAlert = function() {
-  document.getElementById("alert-banner").hidden = true;
-};
+/** Dismiss the alert banner. @returns {void} */
+window.dismissAlert = function() { hideAlertBanner(); };
 
 window.handleSubmit = handleSubmit;
 
@@ -181,39 +170,6 @@ const DEFAULT_LAT = 12.9716;
 /** @constant {number} Default venue longitude (MetroArena centre) */
 const DEFAULT_LNG = 77.5946;
 
-/**
- * Append a chat message bubble to the conversation log.
- * Scrolls to bottom after insertion to keep latest message in view.
- *
- * @param {string} text              - Message text content
- * @param {"bot"|"user"} role        - Determines bubble alignment and colour
- * @param {boolean} [isProactive=false] - If true, applies proactive alert styling
- * @returns {HTMLDivElement} The created message element (used for streaming updates)
- */
-function appendMessage(text, role, isProactive = false) {
-  const log = document.getElementById("messages");
-  const div = document.createElement("div");
-  div.className = `msg msg--${role}${isProactive ? " msg--proactive" : ""}`;
-  div.textContent = text;
-  if (role === "bot") {
-    div.setAttribute("role", "status");
-    div.setAttribute("aria-live", "polite");
-  }
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
-  return div;
-}
-
-/**
- * Strip potentially dangerous HTML characters and enforce a length limit.
- * Prevents XSS from user-supplied input before it reaches the DOM or Gemini.
- *
- * @param {string} t - Raw user input string
- * @returns {string} Sanitised string (max 300 chars, HTML chars removed)
- */
-function sanitise(t) {
-  return t.replace(/[<>&"'`]/g, "").substring(0, 300).trim();
-}
 
 /**
  * Extract a stadium section from the user's query and match it to venue data.

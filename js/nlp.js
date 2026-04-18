@@ -15,7 +15,7 @@
  * @see https://cloud.google.com/natural-language/docs/reference/rest/v1/documents/analyzeEntities
  */
 
-/** @constant {string} Natural Language API v1 entity analysis endpoint */
+import { fetchWithTimeout } from "./utils.js";
 const NL_ENDPOINT =
   "https://language.googleapis.com/v1/documents:analyzeEntities";
 
@@ -61,29 +61,18 @@ const NL_TIMEOUT_MS = 5_000;
 export async function analyseQuery(text) {
   if (!text || !window.ENV?.MAPS_API_KEY) return _emptyAnnotation();
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), NL_TIMEOUT_MS);
-
   try {
     const [entitiesRes, sentimentRes] = await Promise.all([
-      fetch(`${NL_ENDPOINT}?key=${window.ENV.MAPS_API_KEY}`, {
+      fetchWithTimeout(`${NL_ENDPOINT}?key=${window.ENV.MAPS_API_KEY}`, {
         method:  "POST",
-        signal:  controller.signal,
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          document: { type: "PLAIN_TEXT", content: text },
-          encodingType: "UTF8",
-        }),
-      }),
-      fetch(`${NL_SENTIMENT_ENDPOINT}?key=${window.ENV.MAPS_API_KEY}`, {
+        body:    JSON.stringify({ document: { type: "PLAIN_TEXT", content: text }, encodingType: "UTF8" }),
+      }, NL_TIMEOUT_MS),
+      fetchWithTimeout(`${NL_SENTIMENT_ENDPOINT}?key=${window.ENV.MAPS_API_KEY}`, {
         method:  "POST",
-        signal:  controller.signal,
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          document: { type: "PLAIN_TEXT", content: text },
-          encodingType: "UTF8",
-        }),
-      }),
+        body:    JSON.stringify({ document: { type: "PLAIN_TEXT", content: text }, encodingType: "UTF8" }),
+      }, NL_TIMEOUT_MS),
     ]);
 
     const entitiesData  = entitiesRes.ok  ? await entitiesRes.json()  : {};

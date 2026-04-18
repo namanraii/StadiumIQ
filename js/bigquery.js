@@ -18,6 +18,8 @@
  * @see https://cloud.google.com/bigquery/docs/reference/rest/v2/tabledata/insertAll
  */
 
+import { fetchWithTimeout, uniqueId } from "./utils.js";
+
 /** @constant {string} BigQuery project ID */
 const BQ_PROJECT = "smartstadium-493619";
 
@@ -110,27 +112,24 @@ export async function streamVenueSnapshot(gateData, crowdData, gameState) {
 async function _insertRows(table, rows) {
   if (!window.ENV?.MAPS_API_KEY) return;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), BQ_TIMEOUT_MS);
-
   const payload = {
-    rows: rows.map((json, i) => ({
-      insertId: `${Date.now()}-${i}`, // Unique ID prevents duplicate inserts
+    rows: rows.map(json => ({
+      insertId: uniqueId("row"), // uniqueId() from utils.js — unique per insert
       json,
     })),
-    skipInvalidRows:      false,
-    ignoreUnknownValues:  true,
+    skipInvalidRows:     false,
+    ignoreUnknownValues: true,
   };
 
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${BQ_INSERT_URL(BQ_DATASET, table)}?key=${window.ENV.MAPS_API_KEY}`,
       {
         method:  "POST",
-        signal:  controller.signal,
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(payload),
-      }
+      },
+      BQ_TIMEOUT_MS
     );
     if (!res.ok) {
       // BigQuery API key permissions often limited on dev builds — expected
@@ -144,7 +143,5 @@ async function _insertRows(table, rows) {
   } catch (e) {
     // Non-fatal — never disrupt user experience for analytics
     console.info(`[StadiumIQ:bigquery] Analytics stream unavailable: ${e.message}`);
-  } finally {
-    clearTimeout(timer);
   }
 }

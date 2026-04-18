@@ -12,6 +12,8 @@
  * @see https://developers.google.com/maps/documentation/routes
  */
 
+import { fetchWithTimeout } from "./utils.js";
+
 /** @constant {string} Routes API v2 endpoint */
 const ROUTES_URL = "https://routes.googleapis.com/directions/v2:computeRoutes";
 
@@ -34,9 +36,6 @@ const TIMEOUT_MS = 8_000;
  * console.log(route.summary); // "45m walk — about 1 min"
  */
 export async function computeRoute(origin, destination) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
   const body = {
     origin:      { location: { latLng: origin } },
     destination: { location: { latLng: destination } },
@@ -47,9 +46,8 @@ export async function computeRoute(origin, destination) {
 
   let data;
   try {
-    const res = await fetch(ROUTES_URL, {
+    const res = await fetchWithTimeout(ROUTES_URL, {
       method: "POST",
-      signal: controller.signal,
       headers: {
         "Content-Type":    "application/json",
         "X-Goog-Api-Key":  window.ENV.ROUTES_API_KEY,
@@ -57,11 +55,11 @@ export async function computeRoute(origin, destination) {
           "routes.duration,routes.distanceMeters,routes.legs.steps.navigationInstruction",
       },
       body: JSON.stringify(body),
-    });
+    }, TIMEOUT_MS);
     if (!res.ok) throw new Error(`Routes API error ${res.status}`);
     data = await res.json();
-  } finally {
-    clearTimeout(timer);
+  } catch (e) {
+    throw new Error(`Routes API failed: ${e.message}`);
   }
 
   const route = data.routes?.[0];
