@@ -12,7 +12,7 @@
  * 4. Register event listeners for Firebase gamestate changes and alerts
  */
 import { initFirebase, getLiveContext }            from "./firebase.js";
-import { askGemini }                               from "./gemini.js";
+import { routeAIQuery }                            from "./ai.js";
 import { classifyIntent }                          from "./intent.js";
 import { computeRoute }                            from "./routes.js";
 import { startProactiveLoop }                      from "./proactive.js";
@@ -24,6 +24,7 @@ import { appendMessage, updateBotMessage,
          showAlertBanner, hideAlertBanner,
          updateStatusBar, consumeInput }           from "./ui.js";
 import { sanitise }                                from "./utils.js";
+import { logger }                                  from "./logger.js";
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -120,8 +121,9 @@ export async function handleSubmit(e) {
       }
     }
 
-    const reply = await askGemini(text, ctx);
-    updateBotMessage(thinking, reply); // ui.js — updates text + aria-label atomically
+    // Stage 3: Cloud Function (Vertex AI) / fallback direct Gemini
+    const reply = await routeAIQuery(text, ctx, intent);
+    updateBotMessage(thinking, reply);
 
     // BigQuery Streaming Insert — log full interaction for post-event analytics
     // Fields: query, intent, response, latency, game state at time of query
@@ -137,8 +139,8 @@ export async function handleSubmit(e) {
       ts:            Date.now(),
     }); // Fire-and-forget — does not await to avoid blocking UI
   } catch (err) {
-    console.error("[StadiumIQ:app] Chat error:", err.message);
-    thinking.textContent = "Sorry, I couldn't get that. Please try again.";
+    logger.error("app", "Chat error:", err.message);
+    updateBotMessage(thinking, "Sorry, I couldn't get that. Please try again.");
   }
 }
 

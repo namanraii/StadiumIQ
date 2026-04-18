@@ -16,6 +16,7 @@
  */
 
 import { fetchWithTimeout } from "./utils.js";
+import { logger }           from "./logger.js";
 const NL_ENDPOINT =
   "https://language.googleapis.com/v1/documents:analyzeEntities";
 
@@ -92,7 +93,7 @@ export async function analyseQuery(text) {
     };
   } catch (e) {
     // Non-fatal: NL API failure should never block the chat response
-    console.warn("[StadiumIQ:nlp] Entity analysis unavailable:", e.message);
+    logger.warn("nlp", "Entity analysis unavailable:", e.message);
     return _emptyAnnotation();
   } finally {
     clearTimeout(timer);

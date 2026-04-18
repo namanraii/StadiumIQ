@@ -53,37 +53,40 @@ graph LR
 
 ---
 
-## ☁️ Google Services — Integrated Workflow Pipeline
+## ☁️ Google Services — Enterprise Architecture
 
-StadiumIQ is not a single-API app. Every user interaction flows through a **multi-service Google Cloud pipeline**:
+StadiumIQ employs an **Enterprise Gateway Pattern** to secure API keys and orchestrate complex AI workflows:
 
 ```
-User Query
+User Query (Frontend)
   │
-  ├─── Cloud Natural Language API ──► entity extraction (Gate D, food, etc.)
-  │                                   sentiment analysis (frustration / curiosity)
-  │
-  ├─── Gemini 2.5 Flash ────────────► context-aware NLU response
-  │         (context enriched with NL entities + Firebase live data)
-  │
-  ├─── Routes API ──────────────────► walking directions for navigation intents
-  │
-  └─── BigQuery Streaming Insert ───► logs query + intent + response + game state
-                                      enables post-event analytics & ML training
+  ├─── Cloud Function (stadiumIQAssist) ◄── Secure Backend Gateway
+       │
+       ├─── Cloud Natural Language API ──► entity extraction & sentiment analysis
+       │
+       ├─── Vertex AI ───────────────────► Gemini 2.5 Flash NLU response
+       │                                   (Enterprise Service Account Auth)
+       │
+       └─── BigQuery Streaming Insert ───► logs complete interaction record
+
+Navigation Intents (Frontend fallback)
+  └─── Routes API ───────────────────────► walking directions (WALK mode)
 
 Firebase Realtime DB ──► live game state triggers → Proactive Alert Engine
                                                    → BigQuery venue snapshots
                                                    → Google Maps overlay refresh
 
 Firebase Auth ──► anonymous UID → scopes GA4 events + Performance traces
-Firebase Analytics (GA4) ──► tracks chat_message_sent, proactive_alert_shown
-Firebase Performance ──► gemini_response traces, custom latency metrics
-Cloud Run + Cloud Build ──► serverless hosting with auto-scaling on game day
+Firebase Analytics (GA4) ──► tracks event funnel (`chat_message_sent`, etc.)
+Firebase Performance ──► measures latency across AI pipeline and Maps rendering
+Cloud Run + Cloud Build ──► CI/CD to Nginx serverless hosting (Artifact Registry)
+Secret Manager ──► Securely injects Maps/Firebase keys at build time
 ```
 
 | Service | Role in Workflow |
 |---|---|
-| **Gemini 2.5 Flash** | Stage 3 of query pipeline: NLU + real-time response generation with system instructions and live Firebase context injection |
+| **Cloud Functions** | HTTP trigger acting as the secure gateway for the AI pipeline (`functions/index.js`). |
+| **Vertex AI** | Enterprise Gemini 2.5 Flash accessed purely via Service Account from the Cloud Function. No keys exposed in browser. |
 | **Cloud Natural Language API** | Stage 1: entity extraction (`analyzeEntities`) + sentiment (`analyzeSentiment`) on every user query — entities enrich Gemini context |
 | **BigQuery (Streaming Inserts)** | Stage 4: every interaction logged to `stadium_analytics.user_interactions`; venue snapshots to `venue_snapshots` table on every Firebase gamestate change |
 | **Firebase Realtime Database** | Live backbone: `onValue()` listeners push instant updates to map overlay, proactive alert engine, and BigQuery snapshots |

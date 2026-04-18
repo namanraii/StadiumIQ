@@ -1,0 +1,71 @@
+steps:
+  # Step 1: Install root dependencies and run tests
+  - name: 'node:20'
+    id: 'install-and-test'
+    entrypoint: npm
+    args: ['install']
+
+  - name: 'node:20'
+    id: 'run-tests'
+    entrypoint: npm
+    args: ['test']
+    waitFor: ['install-and-test']
+
+  # Step 2: Install Cloud Function dependencies
+  - name: 'node:20'
+    id: 'install-functions'
+    entrypoint: npm
+    args: ['install', '--prefix', 'functions']
+    waitFor: ['run-tests']
+
+  # Step 3: Deploy Cloud Function (stadiumIQAssist)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-function'
+    entrypoint: gcloud
+    args:
+      - functions
+      - deploy
+      - stadiumIQAssist
+      - '--runtime=nodejs20'
+      - '--trigger-http'
+      - '--allow-unauthenticated'
+      - '--region=us-central1'
+      - '--source=functions/'
+      - '--entry-point=stadiumIQAssist'
+      - '--project=$PROJECT_ID'
+      - '--set-env-vars=GCP_PROJECT=$PROJECT_ID'
+    waitFor: ['install-functions']
+
+  # Step 4: Inject API keys and deploy Cloud Run frontend
+  - name: 'bash'
+    id: 'inject-keys'
+    args:
+      - '-c'
+      - |
+        sed -i "s/__GEMINI_API_KEY__/$$GEMINI_API_KEY/g"   config.js
+        sed -i "s/__FIREBASE_API_KEY__/$$FIREBASE_API_KEY/g" config.js
+        sed -i "s/__MAPS_API_KEY__/$$MAPS_API_KEY/g"       config.js
+    waitFor: ['run-tests']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-run'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - smartstadium-app
+      - '--source=.'
+      - '--region=us-central1'
+      - '--allow-unauthenticated'
+      - '--quiet'
+      - '--project=$PROJECT_ID'
+    waitFor: ['inject-keys', 'deploy-cloud-function']
+
+substitutions:
+  _REGION: us-central1
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+timeout: '1200s'

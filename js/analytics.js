@@ -23,6 +23,7 @@
  */
 import { getAnalytics, logEvent, setUserProperties } from
   "https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics.js";
+import { logger } from "./logger.js";
 
 /** @type {import("firebase/analytics").Analytics|null} GA4 analytics instance */
 let _analytics = null;
@@ -43,10 +44,10 @@ export function initAnalytics(app, uid = null) {
       setUserProperties(_analytics, { session_type: "anonymous", venue: "MetroArena" });
     }
     logEvent(_analytics, "app_open", { venue: "MetroArena", platform: "web" });
-    console.info("[StadiumIQ:analytics] GA4 initialised");
+    logger.info("analytics", "GA4 initialised");
   } catch (e) {
     // Non-fatal — tracking failure never degrades UX
-    console.warn("[StadiumIQ:analytics] Analytics unavailable:", e.message);
+    logger.warn("analytics", "Analytics unavailable:", e.message);
   }
 }
 
@@ -98,6 +99,6 @@ function _logSafe(eventName, params) {
   try {
     logEvent(_analytics, eventName, params);
   } catch (e) {
-    console.warn(`[StadiumIQ:analytics] Failed to log "${eventName}":`, e.message);
+    logger.warn("analytics", `Failed to log "${eventName}":`, e.message);
   }
 }

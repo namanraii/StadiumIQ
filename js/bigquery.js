@@ -19,6 +19,7 @@
  */
 
 import { fetchWithTimeout, uniqueId } from "./utils.js";
+import { logger } from "./logger.js";
 
 /** @constant {string} BigQuery project ID */
 const BQ_PROJECT = "smartstadium-493619";
@@ -133,15 +134,15 @@ async function _insertRows(table, rows) {
     );
     if (!res.ok) {
       // BigQuery API key permissions often limited on dev builds — expected
-      console.info(`[StadiumIQ:bigquery] Insert to ${table} returned ${res.status} — continuing`);
+      logger.info("bigquery", `Insert to ${table} returned ${res.status} — continuing`);
     } else {
       const data = await res.json();
       if (data.insertErrors?.length) {
-        console.warn("[StadiumIQ:bigquery] Row insert errors:", data.insertErrors);
+        logger.warn("bigquery", "Row insert errors:", data.insertErrors);
       }
     }
   } catch (e) {
     // Non-fatal — never disrupt user experience for analytics
-    console.info(`[StadiumIQ:bigquery] Analytics stream unavailable: ${e.message}`);
+    logger.info("bigquery", `Analytics stream unavailable: ${e.message}`);
   }
 }

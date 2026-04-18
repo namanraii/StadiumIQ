@@ -18,6 +18,7 @@
  */
 import { getPerformance, trace as perfTrace } from
   "https://www.gstatic.com/firebasejs/10.7.0/firebase-performance.js";
+import { logger } from "./logger.js";
 
 /** @type {import("firebase/performance").FirebasePerformance|null} */
 let _perf = null;
@@ -32,10 +33,10 @@ let _perf = null;
 export function initPerformance(app) {
   try {
     _perf = getPerformance(app);
-    console.info("[StadiumIQ:perf] Firebase Performance Monitoring initialised");
+    logger.info("perf", "Firebase Performance Monitoring initialised");
   } catch (e) {
     // Non-fatal — monitoring is optional for UX correctness
-    console.warn("[StadiumIQ:perf] Performance Monitoring unavailable:", e.message);
+    logger.warn("perf", "Performance Monitoring unavailable:", e.message);
   }
 }
 
@@ -62,7 +63,7 @@ export function startTrace(traceName) {
       try { t.stop(); } catch { /* swallow stop errors silently */ }
     };
   } catch (e) {
-    console.warn(`[StadiumIQ:perf] Could not start trace "${traceName}":`, e.message);
+    logger.warn("perf", `Could not start trace "${traceName}":`, e.message);
     return () => {};
   }
 }

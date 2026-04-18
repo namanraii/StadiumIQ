@@ -16,6 +16,7 @@
 import { getLiveContext }      from "./firebase.js";
 import { askGeminiProactive }  from "./gemini.js";
 import { trackProactiveAlert } from "./analytics.js";
+import { logger }              from "./logger.js";
 
 /** @type {string|null} Key of the last fired trigger — prevents duplicate alerts */
 let _lastTrigger = null;
@@ -134,7 +135,7 @@ async function _evaluate(onMessage) {
     const msg = await askGeminiProactive(trigger.reason, ctx);
     onMessage(msg);
   } catch (e) {
-    console.error("[StadiumIQ:proactive] Message generation failed:", e.message);
+    logger.error("proactive", "Message generation failed:", e.message);
   } finally {
     performance.mark("proactive-eval-end");
     performance.measure("proactive-eval", "proactive-eval-start", "proactive-eval-end");

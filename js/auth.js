@@ -16,6 +16,7 @@
  */
 import { getAuth, signInAnonymously, onAuthStateChanged } from
   "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { logger } from "./logger.js";
 
 /** @type {import("firebase/auth").Auth|null} Firebase Auth instance */
 let _auth = null;
@@ -36,7 +37,7 @@ export async function initAuth(app) {
     _auth = getAuth(app);
     const result = await signInAnonymously(_auth);
     _uid = result.user.uid;
-    console.info(`[StadiumIQ:auth] Anonymous session started: ${_uid.slice(0, 8)}…`);
+    logger.info("auth", `Anonymous session started: ${_uid.slice(0, 8)}…`);
 
     // Keep UID updated across token refreshes
     onAuthStateChanged(_auth, user => {
@@ -46,7 +47,7 @@ export async function initAuth(app) {
     return _uid;
   } catch (e) {
     // Non-fatal — app continues without authenticated session
-    console.warn("[StadiumIQ:auth] Anonymous sign-in unavailable:", e.message);
+    logger.warn("auth", "Anonymous sign-in unavailable:", e.message);
     return null;
   }
 }
