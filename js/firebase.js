@@ -37,7 +37,7 @@ const WATCHED_NODES = ["gameState", "queues", "gates", "crowd", "alerts"];
  *
  * @returns {void}
  */
-export function initFirebase() {
+export async function initFirebase() {
   const app = initializeApp({
     apiKey:      window.ENV.FIREBASE_API_KEY,
     databaseURL: window.ENV.FIREBASE_DB_URL,

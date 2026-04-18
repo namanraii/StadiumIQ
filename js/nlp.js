@@ -95,8 +95,6 @@ export async function analyseQuery(text) {
     // Non-fatal: NL API failure should never block the chat response
     logger.warn("nlp", "Entity analysis unavailable:", e.message);
     return _emptyAnnotation();
-  } finally {
-    clearTimeout(timer);
   }
 }
 
