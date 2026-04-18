@@ -19,6 +19,7 @@ import { startProactiveLoop }                      from "./proactive.js";
 import { updateGateOverlay, focusLocation }        from "./maps.js";
 import { analyseQuery, formatAnnotationForContext } from "./nlp.js";
 import { trackChatMessage, trackProactiveAlert }    from "./analytics.js";
+import { streamInteraction, streamVenueSnapshot }   from "./bigquery.js";
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -53,10 +54,13 @@ window.addEventListener("DOMContentLoaded", () => {
  * @listens {CustomEvent} gamestate-update
  */
 window.addEventListener("gamestate-update", e => {
-  const gs = e.detail;
-  const el = document.getElementById("game-status");
+  const gs  = e.detail;
+  const ctx = getLiveContext();
+  const el  = document.getElementById("game-status");
   if (el) el.textContent = `Q${gs.quarter} · ${gs.minutesLeft} min left · Live`;
-  updateGateOverlay(getLiveContext().gates);
+  updateGateOverlay(ctx.gates);
+  // BigQuery: stream venue snapshot on every live game-state update
+  streamVenueSnapshot(ctx.gates, ctx.crowd, gs);
 });
 
 /**
@@ -90,7 +94,8 @@ export async function handleSubmit(e) {
   if (!raw) return;
   input.value = "";
 
-  const text    = sanitise(raw);
+  const text      = sanitise(raw);
+  const startTime = performance.now(); // Start timer for BigQuery response_ms metric
   appendMessage(text, "user");
   const thinking = appendMessage("…", "bot");
 
@@ -123,6 +128,20 @@ export async function handleSubmit(e) {
     const reply = await askGemini(text, ctx);
     thinking.textContent = reply;
     thinking.setAttribute("aria-label", `StadiumIQ says: ${reply}`);
+
+    // BigQuery Streaming Insert — log full interaction for post-event analytics
+    // Fields: query, intent, response, latency, game state at time of query
+    streamInteraction({
+      session_id:    window._uid || "anonymous",
+      query:         text,
+      intent:        intent,
+      response:      reply,
+      response_ms:   Math.round(performance.now() - startTime),
+      game_quarter:  ctx.gameState?.quarter  ?? 0,
+      minutes_left:  ctx.gameState?.minutesLeft ?? 0,
+      game_phase:    ctx.gameState?.phase      ?? "unknown",
+      ts:            Date.now(),
+    }); // Fire-and-forget — does not await to avoid blocking UI
   } catch (err) {
     console.error("[StadiumIQ:app] Chat error:", err.message);
     thinking.textContent = "Sorry, I couldn't get that. Please try again.";

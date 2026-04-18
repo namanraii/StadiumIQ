@@ -53,20 +53,47 @@ graph LR
 
 ---
 
-## ☁️ Google Services Used
+## ☁️ Google Services — Integrated Workflow Pipeline
 
-| Service | Role | Implementation Detail |
-|---|---|---|
-| **Gemini 2.5 Flash** | NLU + real-time response generation + proactive alerting | `generateContent` via REST API with system instructions, context injection, and 30s response caching |
-| **Firebase Realtime DB** | Live gameState, crowd density, queue, and gate data | `onValue()` listeners — zero-polling, instant UI updates on every Firebase write |
-| **Maps JavaScript API** | Interactive satellite venue map with custom facility markers | Custom SVG marker overlays for gates (A-D), food stalls, restrooms, and exits with live crowd-density fill colours |
-| **Routes API** | Crowd-aware pedestrian walking directions | POST to `computeRoutes` endpoint with `WALK` travel mode; summary injected into Gemini context for natural language routing |
-| **Cloud Run** | Containerized serverless deployment | Nginx Docker container auto-scaled to handle event traffic spikes; built via Cloud Build from source |
-| **Cloud Build** | CI/CD build pipeline | Automated container image build triggered by `gcloud run deploy --source .`; image stored in Artifact Registry |
-| **Firebase Performance Monitoring** | Real-User Monitoring (RUM) + custom traces | `getPerformance()` SDK in `js/perf.js`; custom traces instrument `gemini_response`, `route_compute`, `proactive_eval`, and `firebase_init` latency |
-| **Cloud Natural Language API** | Entity extraction + sentiment analysis on user queries | `js/nlp.js` calls `analyzeEntities` + `analyzeSentiment` endpoints; detected locations/events are injected into Gemini context for richer, more precise answers |
-| **Firebase Authentication** | Anonymous user sessions for scoping analytics and performance data | `js/auth.js` uses `signInAnonymously()` + `onAuthStateChanged()`; UID attached to GA4 user properties and performance traces |
-| **Google Analytics 4 (Firebase Analytics)** | Real-time event tracking across the full user interaction funnel | `js/analytics.js` tracks `chat_message_sent`, `quick_action_tapped`, `proactive_alert_shown`, and `route_computed` events with intent categorisation |
+StadiumIQ is not a single-API app. Every user interaction flows through a **multi-service Google Cloud pipeline**:
+
+```
+User Query
+  │
+  ├─── Cloud Natural Language API ──► entity extraction (Gate D, food, etc.)
+  │                                   sentiment analysis (frustration / curiosity)
+  │
+  ├─── Gemini 2.5 Flash ────────────► context-aware NLU response
+  │         (context enriched with NL entities + Firebase live data)
+  │
+  ├─── Routes API ──────────────────► walking directions for navigation intents
+  │
+  └─── BigQuery Streaming Insert ───► logs query + intent + response + game state
+                                      enables post-event analytics & ML training
+
+Firebase Realtime DB ──► live game state triggers → Proactive Alert Engine
+                                                   → BigQuery venue snapshots
+                                                   → Google Maps overlay refresh
+
+Firebase Auth ──► anonymous UID → scopes GA4 events + Performance traces
+Firebase Analytics (GA4) ──► tracks chat_message_sent, proactive_alert_shown
+Firebase Performance ──► gemini_response traces, custom latency metrics
+Cloud Run + Cloud Build ──► serverless hosting with auto-scaling on game day
+```
+
+| Service | Role in Workflow |
+|---|---|
+| **Gemini 2.5 Flash** | Stage 3 of query pipeline: NLU + real-time response generation with system instructions and live Firebase context injection |
+| **Cloud Natural Language API** | Stage 1: entity extraction (`analyzeEntities`) + sentiment (`analyzeSentiment`) on every user query — entities enrich Gemini context |
+| **BigQuery (Streaming Inserts)** | Stage 4: every interaction logged to `stadium_analytics.user_interactions`; venue snapshots to `venue_snapshots` table on every Firebase gamestate change |
+| **Firebase Realtime Database** | Live backbone: `onValue()` listeners push instant updates to map overlay, proactive alert engine, and BigQuery snapshots |
+| **Routes API v2** | Navigation intents: `computeRoutes` with `WALK` mode; route summary injected into Gemini context for natural-language directions |
+| **Maps JavaScript API** | Satellite venue map with custom SVG gate markers; capacity colour updated live from Firebase gate data |
+| **Firebase Authentication** | Anonymous `signInAnonymously()` session on load; UID scopes GA4 events and Performance traces across the session |
+| **Google Analytics 4 (Firebase)** | Tracks `chat_message_sent` (intent category), `quick_action_chip`, `proactive_alert_shown`, `route_computed` — full funnel visibility |
+| **Firebase Performance Monitoring** | Custom `gemini_response` trace wraps every Gemini call; `response_length` metric logged per interaction |
+| **Cloud Run** | Nginx container; auto-scales to handle concurrent stadium event traffic spikes |
+| **Cloud Build** | CI/CD: source-based build from `gcloud run deploy --source .`; container stored in Artifact Registry |
 
 ### Production Architecture with Extended Google Services
 In a production deployment at scale, StadiumIQ would integrate additional Google services:
