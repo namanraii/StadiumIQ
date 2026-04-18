@@ -1,0 +1,29 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": ["warn", { "allow": ["info", "warn", "error"] }],
+    "eqeqeq": ["error", "always"],
+    "curly": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "prefer-arrow-callback": "error",
+    "arrow-body-style": ["error", "as-needed"],
+    "no-duplicate-imports": "error",
+    "no-shadow": "error",
+    "consistent-return": "warn",
+    "no-throw-literal": "error",
+    "radix": "error",
+    "no-implicit-coercion": "warn",
+    "prefer-template": "error",
+    "object-shorthand": "error",
+    "no-param-reassign": ["warn", { "props": false }]
+  }
+}

@@ -15,6 +15,8 @@ import { initializeApp } from
 import { getDatabase, ref, onValue } from
   "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 import { initPerformance } from "./perf.js";
+import { initAuth }        from "./auth.js";
+import { initAnalytics }   from "./analytics.js";
 
 /** @type {import("firebase/database").Database} */
 let _db;
@@ -43,6 +45,12 @@ export function initFirebase() {
   });
   _db = getDatabase(app);
   initPerformance(app); // Firebase Performance Monitoring — 7th Google service
+
+  // Firebase Authentication — anonymous sessions for user scoping
+  const uid = await initAuth(app);
+
+  // Google Analytics 4 via Firebase Analytics — event tracking
+  initAnalytics(app, uid);
 
   WATCHED_NODES.forEach(node => {
     onValue(ref(_db, node), snap => {

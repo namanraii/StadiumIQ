@@ -13,8 +13,9 @@
  * 4. Q4 ending (≤5 min) + exit density > 60%: Alternate exit suggestion
  * 5. Post-game: Crowd dispersal timing
  */
-import { getLiveContext } from "./firebase.js";
-import { askGeminiProactive } from "./gemini.js";
+import { getLiveContext }      from "./firebase.js";
+import { askGeminiProactive }  from "./gemini.js";
+import { trackProactiveAlert } from "./analytics.js";
 
 /** @type {string|null} Key of the last fired trigger — prevents duplicate alerts */
 let _lastTrigger = null;
@@ -128,6 +129,7 @@ async function _evaluate(onMessage) {
   const trigger = evaluateTrigger(ctx);
   if (!trigger || trigger.key === _lastTrigger) return;
   _lastTrigger = trigger.key;
+  trackProactiveAlert(trigger.key); // GA4 event: proactive alert delivered
   try {
     const msg = await askGeminiProactive(trigger.reason, ctx);
     onMessage(msg);

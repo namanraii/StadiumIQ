@@ -18,6 +18,7 @@ import { computeRoute }                            from "./routes.js";
 import { startProactiveLoop }                      from "./proactive.js";
 import { updateGateOverlay, focusLocation }        from "./maps.js";
 import { analyseQuery, formatAnnotationForContext } from "./nlp.js";
+import { trackChatMessage, trackProactiveAlert }    from "./analytics.js";
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -97,6 +98,9 @@ export async function handleSubmit(e) {
     const intent = classifyIntent(text);
     const ctx    = getLiveContext();
 
+    // Track chat interaction in Google Analytics 4
+    trackChatMessage(intent, false);
+
     // Stage 1: Cloud Natural Language API — entity extraction + sentiment
     // Enriches Gemini context with detected locations, events, and query intent signals
     const nlAnnotation = await analyseQuery(text);
@@ -133,6 +137,7 @@ export async function handleSubmit(e) {
  * @returns {void}
  */
 window.quickAsk = function(q) {
+  trackChatMessage(classifyIntent(q), true); // GA4: track quick action chip taps
   document.getElementById("user-input").value = q;
   handleSubmit({ preventDefault: () => {} });
 };
