@@ -12,18 +12,21 @@
  * @description Maps intent names to their corresponding regex patterns.
  */
 const PATTERNS = {
-  navigation: /route|way to|seat|where is|directions|gate|entrance|how do i get/i,
-  queue:      /queue|wait|how long|crowd|busy|food|concession|snack/i,
-  alert:      /update|news|announcement|delay|cancel|emergency|what.s happening/i,
+  // Specific categories first. Navigation phrases like "where is" / "way to"
+  // are broad and would otherwise steal facilities/exit matches (first-match wins).
   facilities: /toilet|restroom|bathroom|atm|first.?aid|medical|wheelchair/i,
   lost:       /lost|found|missing|left behind|forgot/i,
+  queue:      /queue|wait|how long|crowd|busy|food|concession|snack/i,
+  alert:      /update|news|announcement|delay|cancel|emergency|what.s happening/i,
   schedule:   /time|when|kick.?off|start|half.?time|next|schedule|end/i,
-  exit:       /exit|leave|go home|out|parking|car/i,
+  exit:       /\bexit\b|\bleave\b|go home|\bout\b|\bparking\b|\bcar\b/i,
+  navigation: /route|way to|seat|where is|directions|gate|entrance|how do i get/i,
 };
 
 /**
  * Classify a sanitised user message into one of the known intent categories.
- * Patterns are evaluated in insertion order; first match wins.
+ * Patterns are evaluated in insertion order; first match wins
+ * (specific categories are listed before broad navigation phrases).
  * Falls back to "general" for unrecognised queries.
  *
  * @param {string} msg - Sanitised user message (max 300 chars, HTML-stripped)
